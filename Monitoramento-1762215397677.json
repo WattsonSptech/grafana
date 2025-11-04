@@ -51,8 +51,77 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 5,
+        "w": 4,
         "x": 0,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false,
+            "resultReuseMaxAgeInMinutes": 60
+          },
+          "format": 1,
+          "rawSQL": "SELECT \nCOUNT(tensao_valor) AS \"Ocorrências alta tensão\"\nFROM tensao_clima\nWHERE tensao_valor >= $max_tensao;",
+          "refId": "A"
+        }
+      ],
+      "title": "Ocorrências de alta tensão",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "df31ss18zbhfkd"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 4,
         "y": 0
       },
       "id": 2,
@@ -89,6 +158,77 @@
         }
       ],
       "title": "Ocorrências de baixa tensão",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "df31ss18zbhfkd"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ocorr./ dia"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false,
+            "resultReuseMaxAgeInMinutes": 60
+          },
+          "format": 1,
+          "rawSQL": "SELECT\n    -- 1. Converte o numerador para DECIMAL para garantir uma divisão com casas decimais\n    CAST(SUM(CASE WHEN (tensao_valor >= $max_tensao) OR (tensao_valor <= $min_tensao) THEN 1 ELSE 0 END) AS DOUBLE)\n    /\n    -- 2. NULLIF para evitar erro de \"divisão por zero\" se a tabela estiver vazia\n    NULLIF(COUNT(DISTINCT CAST(data_hora_geracao AS DATE)), 0) AS media_ocorrencias_por_dia\nFROM\n    tensao_clima;",
+          "refId": "A"
+        }
+      ],
+      "title": "Ocorrências por dia",
       "type": "stat"
     },
     {
@@ -158,8 +298,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 14,
-        "w": 13,
+        "h": 12,
+        "w": 12,
         "x": 0,
         "y": 6
       },
@@ -277,12 +417,12 @@
     ]
   },
   "time": {
-    "from": "2025-10-26T00:00:00.000Z",
-    "to": "2025-10-31T00:00:00.000Z"
+    "from": "2025-10-26T07:23:08.511Z",
+    "to": "2025-10-31T14:33:37.350Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Monitoramento",
   "uid": "adqql8x",
-  "version": 4
+  "version": 7
 }
