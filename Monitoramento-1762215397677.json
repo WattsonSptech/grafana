@@ -136,8 +136,7 @@
                 "value": 80
               }
             ]
-          },
-          "unit": "mi. hab"
+          }
         },
         "overrides": []
       },
@@ -189,7 +188,7 @@
           "skipRows": 0
         }
       ],
-      "title": "Ocorrências por Zona",
+      "title": "Ocorrências x Distribuição da População",
       "transformations": [
         {
           "id": "convertFieldType",
@@ -538,5 +537,5 @@
   "timezone": "browser",
   "title": "Monitoramento",
   "uid": "adqql8x",
-  "version": 12
+  "version": 13
 }
