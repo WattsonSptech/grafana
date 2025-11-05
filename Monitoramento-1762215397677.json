@@ -383,13 +383,12 @@
         "type": "constant"
       },
       {
-        "allValue": "",
         "current": {
           "text": [
-            "CENTRO"
+            "All"
           ],
           "value": [
-            "CENTRO"
+            "$__all"
           ]
         },
         "definition": "",
@@ -424,5 +423,5 @@
   "timezone": "browser",
   "title": "Monitoramento",
   "uid": "adqql8x",
-  "version": 7
+  "version": 9
 }
