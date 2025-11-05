@@ -547,7 +547,7 @@
             "uid": "df31ss18zbhfkd"
           },
           "format": 1,
-          "rawSQL": "SELECT  data_hora_geracao, AVG(tensao_valor) as \"Tensão (V)\" FROM tensao_clima GROUP BY data_hora_geracao;",
+          "rawSQL": "WITH base AS (SELECT DISTINCT data_hora_geracao FROM tensao_clima),\nn AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima AS norte WHERE zona_geracao = 'NORTE' AND 'NORTE' IN($zonas) GROUP BY data_hora_geracao), \nne AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'NORDESTE' AND 'NORDESTE' IN($zonas) GROUP BY data_hora_geracao),\nl AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'LESTE' AND 'LESTE' IN($zonas) GROUP BY data_hora_geracao),\nse AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'SUDESTE' AND 'SUDESTE' IN($zonas) GROUP BY data_hora_geracao),\ns AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'SUL' AND 'SUL' IN($zonas) GROUP BY data_hora_geracao),\nc AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'CENTRO' AND 'CENTRO' IN($zonas) GROUP BY data_hora_geracao)\nSELECT \n  b.data_hora_geracao,\n  n.tensao AS \"Tensão (V) - Norte\",\n  ne.tensao AS \"Tensão (V) - Nordeste\",\n  l.tensao AS \"Tensão (V) - Leste\",\n  se.tensao AS \"Tensão (V) - Sudeste'\",\n  s.tensao AS \"Tensão (V) - Sul\",\n  c.tensao AS \"Tensão (V) - Centro\"\nFROM base AS b \nFULL OUTER JOIN n on b.data_hora_geracao = n.data_hora_geracao\nFULL OUTER JOIN ne on b.data_hora_geracao = ne.data_hora_geracao\nFULL OUTER JOIN l on b.data_hora_geracao = l.data_hora_geracao\nFULL OUTER JOIN se on b.data_hora_geracao = se.data_hora_geracao\nFULL OUTER JOIN s on b.data_hora_geracao = s.data_hora_geracao\nFULL OUTER JOIN c ON b.data_hora_geracao = c.data_hora_geracao;",
           "refId": "A"
         }
       ],
@@ -668,9 +668,19 @@
       },
       {
         "current": {
-          "text": "All",
+          "text": [
+            "SUDESTE",
+            "CENTRO",
+            "OESTE",
+            "SUL",
+            "LESTE"
+          ],
           "value": [
-            "$__all"
+            "SUDESTE",
+            "CENTRO",
+            "OESTE",
+            "SUL",
+            "LESTE"
           ]
         },
         "definition": "",
@@ -709,12 +719,12 @@
     ]
   },
   "time": {
-    "from": "2025-11-05T13:52:25.550Z",
-    "to": "2025-11-06T02:56:52.051Z"
+    "from": "2025-11-05T17:57:29.270Z",
+    "to": "2025-11-05T23:04:14.259Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Monitoramento",
   "uid": "adqql8x",
-  "version": 31
+  "version": 34
 }
