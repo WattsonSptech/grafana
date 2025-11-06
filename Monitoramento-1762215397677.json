@@ -50,7 +50,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
+        "h": 4,
         "w": 4,
         "x": 0,
         "y": 0
@@ -84,7 +84,7 @@
             "resultReuseMaxAgeInMinutes": 60
           },
           "format": 1,
-          "rawSQL": "SELECT \nCOUNT(tensao_valor) AS \"Ocorrências alta tensão\"\nFROM tensao_clima\nWHERE tensao_valor >= $max_tensao;",
+          "rawSQL": "SELECT \nCOUNT(tensao_valor) AS \"Ocorrências alta tensão\"\nFROM tensao_clima\nWHERE tensao_valor >= $max_tensao AND zona_geracao IN($zonas)",
           "refId": "A"
         }
       ],
@@ -140,7 +140,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
+        "h": 12,
         "w": 8,
         "x": 4,
         "y": 0
@@ -242,11 +242,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 1
+                "value": 7
               },
               {
                 "color": "red",
-                "value": 2
+                "value": 8
               }
             ]
           }
@@ -254,7 +254,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
+        "h": 26,
         "w": 7,
         "x": 12,
         "y": 0
@@ -287,18 +287,30 @@
             "resultReuseMaxAgeInMinutes": 60
           },
           "format": 1,
-          "rawSQL": "SELECT\n  CASE \n    WHEN MAX(clima_chuva) >= $max_chuva THEN 1\n    ELSE 0\n  END as \"Ocorrência\",\n  zona_geracao,\n  data_hora_geracao AS \"Data-hora\"\nFROM tensao_clima\nGROUP BY zona_geracao, data_hora_geracao;",
+          "rawSQL": "SELECT\n  MAX(clima_vento) as \"km/h vento\",\n  zona_geracao,\n  data_hora_geracao AS \"Data-hora\"\nFROM tensao_clima\nWHERE zona_geracao IN($zonas)\nGROUP BY zona_geracao, data_hora_geracao;",
           "refId": "A"
         }
       ],
       "title": "Eventos climáticos por zona",
       "transformations": [
         {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "km/h vento"
+              }
+            ],
+            "fields": {}
+          }
+        },
+        {
           "id": "groupingToMatrix",
           "options": {
             "columnField": "zona_geracao",
             "rowField": "Data-hora",
-            "valueField": "Ocorrência"
+            "valueField": "km/h vento"
           }
         }
       ],
@@ -332,10 +344,79 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
+        "h": 9,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false,
+            "resultReuseMaxAgeInMinutes": 60
+          },
+          "format": 1,
+          "rawSQL": "WITH falhas AS (\n  SELECT \n    COUNT(tensao_valor) as ocorrencias, date_trunc('day', data_hora_geracao)\n  FROM tensao_clima\n  WHERE (tensao_valor >= $max_tensao OR tensao_valor <= $min_tensao) AND zona_geracao IN($zonas)\n  GROUP BY date_trunc('day', data_hora_geracao)\n) SELECT MIN(ocorrencias) \"Mínima\", AVG(ocorrencias) AS \"Média\", MAX(ocorrencias) AS \"Máxima\" FROM falhas;",
+          "refId": "A"
+        }
+      ],
+      "title": "Quantidade de ocorrências no mesmo dia",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "ff320tqdhx5oga"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
         "w": 4,
         "x": 0,
-        "y": 3
+        "y": 4
       },
       "id": 2,
       "options": {
@@ -366,7 +447,7 @@
             "resultReuseMaxAgeInMinutes": 60
           },
           "format": 1,
-          "rawSQL": "SELECT \nCOUNT(tensao_valor) AS \"Ocorrências alta tensão\"\nFROM tensao_clima\nWHERE tensao_valor <= $min_tensao;",
+          "rawSQL": "SELECT \nCOUNT(tensao_valor) AS \"Ocorrências baixa tensão\"\nFROM tensao_clima\nWHERE tensao_valor <= $min_tensao AND zona_geracao IN($zonas)",
           "refId": "A"
         }
       ],
@@ -403,10 +484,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
+        "h": 4,
         "w": 4,
         "x": 0,
-        "y": 6
+        "y": 8
       },
       "id": 4,
       "options": {
@@ -437,136 +518,12 @@
             "resultReuseMaxAgeInMinutes": 60
           },
           "format": 1,
-          "rawSQL": "SELECT\n    -- 1. Converte o numerador para DECIMAL para garantir uma divisão com casas decimais\n    CAST(SUM(CASE WHEN (tensao_valor >= $max_tensao) OR (tensao_valor <= $min_tensao) THEN 1 ELSE 0 END) AS DOUBLE)\n    /\n    -- 2. NULLIF para evitar erro de \"divisão por zero\" se a tabela estiver vazia\n    NULLIF(COUNT(DISTINCT CAST(data_hora_geracao AS DATE)), 0) AS media_ocorrencias_por_dia\nFROM\n    tensao_clima;",
+          "rawSQL": "SELECT\n    SUM(CASE WHEN (tensao_valor >= $max_tensao) OR (tensao_valor <= $min_tensao) THEN 1 ELSE 0 END)\n    /\n    NULLIF(COUNT(DISTINCT CAST(data_hora_geracao AS DATE)), 0) AS media_ocorrencias_por_dia\nFROM\n    tensao_clima WHERE zona_geracao IN($zonas)",
           "refId": "A"
         }
       ],
       "title": "Ocorrências por dia",
       "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "grafana-athena-datasource",
-        "uid": "ff320tqdhx5oga"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
-            }
-          },
-          "mappings": [],
-          "max": 150,
-          "min": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 110
-              },
-              {
-                "color": "red",
-                "value": 135
-              }
-            ]
-          },
-          "unit": "volt"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 0,
-        "y": 9
-      },
-      "id": 1,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.2.1",
-      "targets": [
-        {
-          "connectionArgs": {
-            "catalog": "__default",
-            "database": "__default",
-            "region": "__default",
-            "resultReuseEnabled": false,
-            "resultReuseMaxAgeInMinutes": 60
-          },
-          "datasource": {
-            "type": "grafana-athena-datasource",
-            "uid": "df31ss18zbhfkd"
-          },
-          "format": 1,
-          "rawSQL": "WITH base AS (SELECT DISTINCT data_hora_geracao FROM tensao_clima),\nn AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima AS norte WHERE zona_geracao = 'NORTE' AND 'NORTE' IN($zonas) GROUP BY data_hora_geracao), \nne AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'NORDESTE' AND 'NORDESTE' IN($zonas) GROUP BY data_hora_geracao),\nl AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'LESTE' AND 'LESTE' IN($zonas) GROUP BY data_hora_geracao),\nse AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'SUDESTE' AND 'SUDESTE' IN($zonas) GROUP BY data_hora_geracao),\ns AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'SUL' AND 'SUL' IN($zonas) GROUP BY data_hora_geracao),\nc AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'CENTRO' AND 'CENTRO' IN($zonas) GROUP BY data_hora_geracao)\nSELECT \n  b.data_hora_geracao,\n  n.tensao AS \"Tensão (V) - Norte\",\n  ne.tensao AS \"Tensão (V) - Nordeste\",\n  l.tensao AS \"Tensão (V) - Leste\",\n  se.tensao AS \"Tensão (V) - Sudeste'\",\n  s.tensao AS \"Tensão (V) - Sul\",\n  c.tensao AS \"Tensão (V) - Centro\"\nFROM base AS b \nFULL OUTER JOIN n on b.data_hora_geracao = n.data_hora_geracao\nFULL OUTER JOIN ne on b.data_hora_geracao = ne.data_hora_geracao\nFULL OUTER JOIN l on b.data_hora_geracao = l.data_hora_geracao\nFULL OUTER JOIN se on b.data_hora_geracao = se.data_hora_geracao\nFULL OUTER JOIN s on b.data_hora_geracao = s.data_hora_geracao\nFULL OUTER JOIN c ON b.data_hora_geracao = c.data_hora_geracao;",
-          "refId": "A"
-        }
-      ],
-      "title": "Tensão média ao longo do tempo",
-      "transformations": [
-        {
-          "id": "convertFieldType",
-          "options": {
-            "conversions": [
-              {
-                "destinationType": "number",
-                "targetField": "Tensão (V)"
-              }
-            ],
-            "fields": {}
-          }
-        }
-      ],
-      "type": "timeseries"
     },
     {
       "datasource": {
@@ -596,12 +553,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 12,
+        "h": 9,
+        "w": 5,
+        "x": 19,
         "y": 9
       },
-      "id": 8,
+      "id": 9,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -636,6 +593,201 @@
       ],
       "title": "Quantidade de ocorrências no mesmo dia",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "ff320tqdhx5oga"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 3,
+            "pointSize": 11,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "mappings": [],
+          "max": 145,
+          "min": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 110
+              },
+              {
+                "color": "red",
+                "value": 135
+              }
+            ]
+          },
+          "unit": "volt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false,
+            "resultReuseMaxAgeInMinutes": 60
+          },
+          "datasource": {
+            "type": "grafana-athena-datasource",
+            "uid": "df31ss18zbhfkd"
+          },
+          "format": 1,
+          "rawSQL": "WITH base AS (SELECT DISTINCT data_hora_geracao FROM tensao_clima),\nn AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima AS norte WHERE zona_geracao = 'NORTE' AND 'NORTE' IN($zonas) GROUP BY data_hora_geracao), \nne AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'NORDESTE' AND 'NORDESTE' IN($zonas) GROUP BY data_hora_geracao),\nl AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'LESTE' AND 'LESTE' IN($zonas) GROUP BY data_hora_geracao),\nse AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'SUDESTE' AND 'SUDESTE' IN($zonas) GROUP BY data_hora_geracao),\ns AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'SUL' AND 'SUL' IN($zonas) GROUP BY data_hora_geracao),\no AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'OESTE' AND 'OESTE' IN($zonas) GROUP BY data_hora_geracao),\nc AS (SELECT data_hora_geracao, CAST(AVG(tensao_valor)AS DOUBLE) as tensao FROM tensao_clima WHERE zona_geracao = 'CENTRO' AND 'CENTRO' IN($zonas) GROUP BY data_hora_geracao)\nSELECT \n  b.data_hora_geracao,\n  n.tensao AS \"Tensão (V) - Norte\",\n  ne.tensao AS \"Tensão (V) - Nordeste\",\n  l.tensao AS \"Tensão (V) - Leste\",\n  se.tensao AS \"Tensão (V) - Sudeste\",\n  s.tensao AS \"Tensão (V) - Sul\",\n  o.tensao AS \"Tensão (V) - Oeste\",\n  c.tensao AS \"Tensão (V) - Centro\"\nFROM base AS b \nFULL OUTER JOIN n on b.data_hora_geracao = n.data_hora_geracao\nFULL OUTER JOIN ne on b.data_hora_geracao = ne.data_hora_geracao\nFULL OUTER JOIN l on b.data_hora_geracao = l.data_hora_geracao\nFULL OUTER JOIN se on b.data_hora_geracao = se.data_hora_geracao\nFULL OUTER JOIN s on b.data_hora_geracao = s.data_hora_geracao\nFULL OUTER JOIN o on b.data_hora_geracao = o.data_hora_geracao\nFULL OUTER JOIN c ON b.data_hora_geracao = c.data_hora_geracao;",
+          "refId": "A"
+        }
+      ],
+      "title": "Tensão média ao longo do tempo",
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "Tensão (V)"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "ff320tqdhx5oga"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ocorrs. por evento"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 19,
+        "y": 18
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "__default",
+            "database": "__default",
+            "region": "__default",
+            "resultReuseEnabled": false,
+            "resultReuseMaxAgeInMinutes": 60
+          },
+          "format": 1,
+          "rawSQL": "WITH ContagemEventos AS (\n    SELECT\n        SUM(CASE WHEN tensao_valor > 135.0 OR tensao_valor < 110.0 THEN 1 ELSE 0 END) AS OcorrsTensao,\n        data_hora_geracao,\n        clima_vento\n        \n    FROM tensao_clima\n    GROUP BY data_hora_geracao, clima_vento\n)\n\nSELECT\n    CAST(SUM(OcorrsTensao) AS DOUBLE) / COUNT(CASE WHEN clima_vento > 7.0 THEN 1 END) AS OcorrenciasPorEvento\nFROM ContagemEventos WHERE clima_vento > 7.0;",
+          "refId": "A"
+        }
+      ],
+      "title": "Ocorrências por evento climático",
+      "type": "stat"
     }
   ],
   "preload": false,
@@ -669,18 +821,10 @@
       {
         "current": {
           "text": [
-            "SUDESTE",
-            "CENTRO",
-            "OESTE",
-            "SUL",
-            "LESTE"
+            "All"
           ],
           "value": [
-            "SUDESTE",
-            "CENTRO",
-            "OESTE",
-            "SUL",
-            "LESTE"
+            "$__all"
           ]
         },
         "definition": "",
@@ -707,24 +851,25 @@
       },
       {
         "current": {
-          "text": "70",
-          "value": "70"
+          "text": "7",
+          "value": "7"
         },
+        "description": "",
         "hide": 2,
-        "name": "max_chuva",
-        "query": "70",
+        "name": "max_vento",
+        "query": "7",
         "skipUrlSync": true,
         "type": "constant"
       }
     ]
   },
   "time": {
-    "from": "2025-11-05T17:57:29.270Z",
-    "to": "2025-11-05T23:04:14.259Z"
+    "from": "2025-11-05T18:55:05.372Z",
+    "to": "2025-11-06T00:03:46.116Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Monitoramento",
   "uid": "adqql8x",
-  "version": 34
+  "version": 56
 }
